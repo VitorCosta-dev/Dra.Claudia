@@ -360,7 +360,7 @@ footer > small { grid-column: 1/-1; padding-top: 24px; border-top: 1px solid rgb
   .about-portrait span { width: 56px; height: 56px; right: -17px; font-size: 20px; }
   .about-copy > p { font-size: 15px; }
   .credentials { flex-direction: column; align-items: flex-start; }
-  .instagram-link { left: 24px; right: auto; }
+  .instagram-link { position: static; margin-top: 28px; width: fit-content; }
   .faq { display: block; }
   .faq-heading { margin-bottom: 50px; }
   .faq summary { font-size: 18px; }
