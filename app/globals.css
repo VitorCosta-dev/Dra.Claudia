@@ -322,7 +322,7 @@ footer > small { grid-column: 1/-1; padding-top: 24px; border-top: 1px solid rgb
   .hero-trust { flex-wrap: wrap; gap: 12px 22px; margin-top: 32px; }
   .hero-visual { min-height: 560px; padding: 0 14px 14px; }
   .hero-image-wrap { border-radius: 2px 2px 80px 2px; }
-  .floating-seal { left: 26px; top: -57px; width: 106px; height: 106px; }
+  .floating-seal { left: 26px; top: 18px; width: 106px; height: 106px; }
   .visual-caption { right: 35px; bottom: 40px; width: 210px; }
   .scroll-cue { display: none; }
   .orbit-two { display: none; }
