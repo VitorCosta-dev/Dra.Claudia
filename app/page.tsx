@@ -147,6 +147,7 @@ export default function Home() {
           <a href="#sobre">Sobre</a>
           <a href="#tratamentos">Tratamentos</a>
           <a href="#experiencia">Experiência</a>
+          <a href="/acesso">Área do paciente</a>
         </nav>
 
         <a className="nav-cta" href={whatsappUrl} target="_blank" rel="noreferrer">
