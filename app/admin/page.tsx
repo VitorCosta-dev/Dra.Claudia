@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "@/lib/supabase";
 
-type Patient = { user_id: string; full_name: string; email: string; cpf: string; created_at: string };
+type Patient = { user_id: string; full_name: string; email: string; cpf: string; created_at: string; clinical_questionnaires: { submitted_at: string | null }[] };
 
 export default function AdminPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -24,7 +24,7 @@ export default function AdminPage() {
       if (membership.error) { setState("Não foi possível verificar sua permissão."); return; }
       if (!membership.data) { setState("Esta área é restrita aos administradores."); return; }
       const result = await client.from("patients")
-        .select("user_id,full_name,email,cpf,created_at")
+        .select("user_id,full_name,email,cpf,created_at,clinical_questionnaires(submitted_at)")
         .order("created_at", { ascending: false }).limit(200);
       if (!active) return;
       if (result.error) { setState("Não foi possível carregar os pacientes."); return; }
@@ -50,8 +50,8 @@ export default function AdminPage() {
         <div className="admin-toolbar"><p>{patients.length} cadastro(s) {patients.length === 200 && "— mostrando os 200 mais recentes"}</p>
           <label>Buscar paciente<input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nome, e-mail ou CPF" /></label>
         </div>
-        <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Nome</th><th>E-mail</th><th>CPF</th><th>Cadastro</th></tr></thead>
-          <tbody>{filtered.map((p) => <tr key={p.user_id}><td>{p.full_name}</td><td>{p.email}</td><td>{p.cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4")}</td><td>{new Date(p.created_at).toLocaleDateString("pt-BR")}</td></tr>)}</tbody>
+        <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Nome</th><th>E-mail</th><th>CPF</th><th>Histórico</th><th>Cadastro</th><th></th></tr></thead>
+          <tbody>{filtered.map((p) => <tr key={p.user_id}><td>{p.full_name}</td><td>{p.email}</td><td>{p.cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4")}</td><td>{p.clinical_questionnaires?.[0]?.submitted_at ? "Preenchido" : "Pendente"}</td><td>{new Date(p.created_at).toLocaleDateString("pt-BR")}</td><td><Link className="table-link" href={`/admin/pacientes/${p.user_id}`}>Ver ficha</Link></td></tr>)}</tbody>
         </table></div>
         {filtered.length === 0 && <p>{query ? "Nenhum paciente encontrado." : "Ainda não há pacientes cadastrados."}</p>}
       </>}

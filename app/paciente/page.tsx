@@ -28,6 +28,9 @@ export default function PatientPage() {
       if (profile.error || membership.error) {
         setState("Não foi possível carregar seus dados. Tente novamente mais tarde.");
       } else {
+        const questionnaire = await client.from("clinical_questionnaires")
+          .select("submitted_at").eq("user_id", auth.user.id).maybeSingle();
+        if (!questionnaire.data?.submitted_at) { router.replace("/questionario"); return; }
         setPatient(profile.data);
         setAdmin(Boolean(membership.data));
         setState("");
@@ -53,6 +56,7 @@ export default function PatientPage() {
         <div><dt>E-mail</dt><dd>{patient.email}</dd></div>
         <div><dt>CPF</dt><dd>•••.•••.•••-{patient.cpf.slice(-2)}</dd></div>
       </dl>}
+      {patient && <Link className="subtle-link" href="/questionario">Revisar meu histórico clínico</Link>}
       {admin && <Link className="patient-submit inline-button" href="/admin">Abrir área ADMIN</Link>}
     </section>
   </main>;

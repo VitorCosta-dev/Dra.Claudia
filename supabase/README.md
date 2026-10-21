@@ -3,9 +3,10 @@
 ## Ordem de ativação
 
 1. Mantenha o cadastro do site fora do ar até terminar as etapas abaixo.
-2. No projeto Supabase **Dra Claudia — Pacientes**, abra **SQL Editor** e execute
-   `migrations/20260923000000_patients.sql` integralmente. Não execute duas vezes.
-   Ele cria as tabelas, valida CPF, ativa RLS e cria o registro de perfil durante o cadastro.
+2. No projeto Supabase **Dra Claudia — Pacientes**, abra **SQL Editor**. Se a primeira
+   migração ainda não foi aplicada, execute `migrations/20260923000000_patients.sql`.
+   Em seguida execute `migrations/20261021000000_clinical_history_and_consent.sql`.
+   Os arquivos criam as tabelas, validam CPF, ativam RLS e registram perfil e aceite.
 3. Em **Authentication → URL Configuration**, configure a URL do site e adicione
    estas URLs exatas à lista de redirecionamento:
    - `https://site-creator-vinext-starter.vitor-fcosta.workers.dev/auth/confirm`
@@ -28,6 +29,8 @@
 - `auth.users`: e-mail, senha gerenciada pelo Supabase e identidade da conta.
 - `public.patients`: nome, CPF e e-mail, vinculados ao ID da conta.
 - `public.admins`: IDs de administradores aprovados manualmente.
+- `public.clinical_questionnaires`: histórico clínico vinculado ao paciente.
+- `public.consent_acceptances`: versão do termo, nome confirmado e horário do aceite.
 - O navegador usa só a publishable key. As políticas RLS protegem as consultas
   mesmo que alguém altere a interface ou chame a API diretamente.
 - O painel exibe os 200 cadastros mais recentes. Antes de superar esse volume,
