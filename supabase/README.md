@@ -30,7 +30,9 @@
 - `public.patients`: nome, CPF e e-mail, vinculados ao ID da conta.
 - `public.admins`: IDs de administradores aprovados manualmente.
 - `public.clinical_questionnaires`: histórico clínico vinculado ao paciente.
-- `public.consent_acceptances`: versão do termo, nome confirmado e horário do aceite.
+- `public.procedures`: catálogo dos procedimentos disponíveis.
+- `public.procedure_terms`: textos e versões dos termos de cada procedimento.
+- `public.procedure_consents`: aceite do paciente, com nome e horário do servidor.
 - O navegador usa só a publishable key. As políticas RLS protegem as consultas
   mesmo que alguém altere a interface ou chame a API diretamente.
 - O painel exibe os 200 cadastros mais recentes. Antes de superar esse volume,

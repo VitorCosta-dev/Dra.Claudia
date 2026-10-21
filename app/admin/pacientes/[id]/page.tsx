@@ -8,13 +8,21 @@ import { questionLabels } from "@/lib/clinical-questionnaire";
 
 type Patient = { full_name: string; email: string; cpf: string; created_at: string };
 type Questionnaire = { answers: Record<string, unknown>; submitted_at: string; questionnaire_version: string };
-type Consent = { term_title: string; term_version: string; signer_name: string; accepted_at: string };
+type Consent = {
+  signer_name: string;
+  accepted_at: string;
+  procedure_terms: {
+    title: string;
+    version: string;
+    procedures: { name: string } | { name: string }[];
+  } | null;
+};
 
 export default function PatientRecordPage() {
   const params = useParams<{ id: string }>();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null);
-  const [consent, setConsent] = useState<Consent | null>(null);
+  const [consents, setConsents] = useState<Consent[]>([]);
   const [state, setState] = useState("Carregando ficha...");
 
   useEffect(() => {
@@ -28,11 +36,11 @@ export default function PatientRecordPage() {
       const [profile, history, acceptance] = await Promise.all([
         client.from("patients").select("full_name,email,cpf,created_at").eq("user_id", params.id).maybeSingle<Patient>(),
         client.from("clinical_questionnaires").select("answers,submitted_at,questionnaire_version").eq("user_id", params.id).maybeSingle<Questionnaire>(),
-        client.from("consent_acceptances").select("term_title,term_version,signer_name,accepted_at").eq("user_id", params.id).order("accepted_at", { ascending: false }).limit(1).maybeSingle<Consent>(),
+        client.from("procedure_consents").select("signer_name,accepted_at,procedure_terms(title,version,procedures(name))").eq("user_id", params.id).order("accepted_at", { ascending: false }),
       ]);
       if (!active) return;
       if (profile.error || history.error || acceptance.error) { setState("Não foi possível carregar a ficha deste paciente."); return; }
-      setPatient(profile.data); setQuestionnaire(history.data); setConsent(acceptance.data); setState("");
+      setPatient(profile.data); setQuestionnaire(history.data); setConsents((acceptance.data ?? []) as Consent[]); setState("");
     }
     void load();
     return () => { active = false; };
@@ -48,7 +56,11 @@ export default function PatientRecordPage() {
       {patient && <>
         <p className="patient-kicker">Paciente</p><h1>{patient.full_name}</h1>
         <dl className="record-summary"><div><dt>E-mail</dt><dd>{patient.email}</dd></div><div><dt>CPF</dt><dd>{patient.cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4")}</dd></div><div><dt>Cadastrado em</dt><dd>{new Date(patient.created_at).toLocaleString("pt-BR")}</dd></div></dl>
-        <section className="record-section"><h2>Consentimento</h2>{consent ? <dl className="record-list"><div><dt>Termo</dt><dd>{consent.term_title}</dd></div><div><dt>Versão</dt><dd>{consent.term_version}</dd></div><div><dt>Nome confirmado</dt><dd>{consent.signer_name}</dd></div><div><dt>Aceito em</dt><dd>{new Date(consent.accepted_at).toLocaleString("pt-BR")}</dd></div></dl> : <p>Não há aceite registrado para este cadastro.</p>}</section>
+        <section className="record-section"><h2>Consentimentos por procedimento</h2>{consents.length ? consents.map((consent, index) => {
+          const relation = consent.procedure_terms;
+          const procedure = relation && (Array.isArray(relation.procedures) ? relation.procedures[0]?.name : relation.procedures?.name);
+          return <dl className="record-list consent-record" key={`${consent.accepted_at}-${index}`}><div><dt>Procedimento</dt><dd>{procedure ?? "Não informado"}</dd></div><div><dt>Termo</dt><dd>{relation?.title ?? "Não informado"}</dd></div><div><dt>Versão</dt><dd>{relation?.version ?? "Não informada"}</dd></div><div><dt>Nome confirmado</dt><dd>{consent.signer_name}</dd></div><div><dt>Aceito em</dt><dd>{new Date(consent.accepted_at).toLocaleString("pt-BR")}</dd></div></dl>;
+        }) : <p>Não há termos de procedimento aceitos por este paciente.</p>}</section>
         <section className="record-section"><h2>Histórico clínico</h2>{questionnaire ? <><p className="record-meta">Enviado em {new Date(questionnaire.submitted_at).toLocaleString("pt-BR")} · {questionnaire.questionnaire_version}</p><dl className="record-list">{answerEntries.map(([key, answer]) => <div key={key}><dt>{questionLabels[key] ?? key}</dt><dd>{printable(answer)}{questionnaire.answers[`${key}_details`] ? <small>{String(questionnaire.answers[`${key}_details`])}</small> : null}</dd></div>)}</dl></> : <p>O paciente ainda não preencheu o histórico clínico.</p>}</section>
       </>}
     </section>

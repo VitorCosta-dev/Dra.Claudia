@@ -4,7 +4,6 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import Link from "next/link";
-import { CONSENT_TERM_SECTIONS, CONSENT_TERM_TITLE, CONSENT_TERM_VERSION } from "@/lib/consent-term";
 
 function validCpf(value: string) {
   const cpf = value.replace(/\D/g, "");
@@ -44,8 +43,6 @@ export default function AccessPage() {
     if (mode === "signup") {
       const fullName = String(form.get("fullName") ?? "").trim();
       const cpf = String(form.get("cpf") ?? "").replace(/\D/g, "");
-      const consentName = String(form.get("consentName") ?? "").trim();
-      const accepted = form.get("consentAccepted") === "on";
       if (fullName.length < 2 || !validCpf(cpf)) {
         setError("Confira seu nome e CPF antes de continuar.");
         return;
@@ -54,21 +51,11 @@ export default function AccessPage() {
         setError("Crie uma senha com pelo menos 8 caracteres.");
         return;
       }
-      if (!accepted || consentName.toLocaleLowerCase("pt-BR") !== fullName.toLocaleLowerCase("pt-BR")) {
-        setError("Para continuar, leia o termo, marque o aceite e digite seu nome completo exatamente como no cadastro.");
-        return;
-      }
       setBusy(true);
       const { error: signUpError } = await client.auth.signUp({
         email, password,
         options: {
-          data: {
-            full_name: fullName,
-            cpf,
-            consent_accepted: true,
-            consent_signer_name: consentName,
-            consent_version: CONSENT_TERM_VERSION,
-          },
+          data: { full_name: fullName, cpf },
           emailRedirectTo: `${window.location.origin}/auth/confirm`,
         },
       });
@@ -101,15 +88,6 @@ export default function AccessPage() {
           </>}
           <label>E-mail<input name="email" type="email" autoComplete="email" required /></label>
           <label>Senha<input name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} required minLength={mode === "signup" ? 8 : undefined} /></label>
-          {mode === "signup" && <section className="consent-box" aria-labelledby="consent-title">
-            <h2 id="consent-title">{CONSENT_TERM_TITLE}</h2>
-            <div className="consent-scroll" tabIndex={0}>
-              {CONSENT_TERM_SECTIONS.map((section) => <div key={section.title}><h3>{section.title}</h3><p>{section.text}</p></div>)}
-            </div>
-            <p className="consent-version">Versão do documento: {CONSENT_TERM_VERSION}</p>
-            <label>Digite seu nome completo para confirmar<input name="consentName" required minLength={2} maxLength={150} /></label>
-            <label className="consent-check"><input type="checkbox" name="consentAccepted" required /> Li, compreendi e concordo com o termo apresentado.</label>
-          </section>}
           {error && <p className="form-error" role="alert">{error}</p>}
           {message && <p className="form-success" role="status">{message}</p>}
           <button className="patient-submit" disabled={busy}>{busy ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}</button>

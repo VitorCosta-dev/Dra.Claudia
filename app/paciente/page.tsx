@@ -57,6 +57,7 @@ export default function PatientPage() {
         <div><dt>CPF</dt><dd>•••.•••.•••-{patient.cpf.slice(-2)}</dd></div>
       </dl>}
       {patient && <Link className="subtle-link" href="/questionario">Revisar meu histórico clínico</Link>}
+      {patient && <Link className="patient-submit inline-button" href="/procedimentos">Escolher procedimento e consultar termos</Link>}
       {admin && <Link className="patient-submit inline-button" href="/admin">Abrir área ADMIN</Link>}
     </section>
   </main>;
