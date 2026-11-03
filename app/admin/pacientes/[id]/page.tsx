@@ -43,12 +43,12 @@ export default function PatientRecordPage() {
       const [profile, history, procedureHistory, acceptance] = await Promise.all([
         client.from("patients").select("full_name,email,cpf,created_at").eq("user_id", params.id).maybeSingle<Patient>(),
         client.from("clinical_questionnaires").select("answers,submitted_at,questionnaire_version").eq("user_id", params.id).maybeSingle<Questionnaire>(),
-        client.from("procedure_questionnaires").select("procedure_id,answers,submitted_at,questionnaire_version,procedures(name)").eq("user_id", params.id).order("submitted_at", { ascending: false }),
-        client.from("procedure_consents").select("signer_name,accepted_at,procedure_terms(title,version,procedures(name))").eq("user_id", params.id).order("accepted_at", { ascending: false }),
+        client.from("procedure_questionnaires").select("procedure_id,answers,submitted_at,questionnaire_version,procedures(name)").eq("user_id", params.id).order("submitted_at", { ascending: false }).overrideTypes<ProcedureQuestionnaire[]>(),
+        client.from("procedure_consents").select("signer_name,accepted_at,procedure_terms(title,version,procedures(name))").eq("user_id", params.id).order("accepted_at", { ascending: false }).overrideTypes<Consent[]>(),
       ]);
       if (!active) return;
       if (profile.error || history.error || acceptance.error) { setState("Não foi possível carregar a ficha deste paciente."); return; }
-      setPatient(profile.data); setQuestionnaire(history.data); setProcedureQuestionnaires((procedureHistory.data ?? []) as ProcedureQuestionnaire[]); setConsents((acceptance.data ?? []) as Consent[]); setState("");
+      setPatient(profile.data); setQuestionnaire(history.data); setProcedureQuestionnaires(procedureHistory.data ?? []); setConsents(acceptance.data ?? []); setState("");
     }
     void load();
     return () => { active = false; };
