@@ -11,36 +11,30 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { procedureCatalog } from "@/lib/procedure-catalog";
+import { whatsappUrl } from "@/lib/site";
 
-const whatsappUrl =
-  "https://wa.me/5511954114425?text=Ol%C3%A1%2C%20Dra.%20Claudia!%20Conheci%20seu%20trabalho%20pelo%20site%20e%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o.";
+const publicWhatsappUrl = whatsappUrl(
+  "Olá, Dra. Claudia! Conheci seu trabalho pelo site e gostaria de tirar uma dúvida.",
+);
 
-const treatments = [
-  {
-    number: "01",
-    name: "Toxina botulínica",
-    eyebrow: "Expressão & prevenção",
-    description:
-      "Uma abordagem personalizada para suavizar linhas de expressão, preservando a naturalidade e a identidade do seu rosto.",
-    note: "Planejamento individual após avaliação",
-  },
-  {
-    number: "02",
-    name: "Peeling coreano",
-    eyebrow: "Uniformidade & luminosidade",
-    description:
-      "Protocolo voltado à renovação da pele, com foco em aparência mais uniforme, iluminada e bem cuidada.",
-    note: "Indicação conforme as necessidades da pele",
-  },
-  {
-    number: "03",
-    name: "Peeling orgânico",
-    eyebrow: "Renovação & textura",
-    description:
-      "Cuidado pensado para apoiar a renovação celular e melhorar a percepção de textura sem perder de vista o conforto da pele.",
-    note: "Conduta definida em avaliação profissional",
-  },
+const featuredProcedureIds = [
+  "toxina-botulinica-a", "preenchimento-labial", "bioestimulador-colageno",
+  "skinbooster", "laser-lavieen", "criolipolise", "microagulhamento", "terapia-capilar",
 ];
+const treatments = featuredProcedureIds
+  .map((id) => procedureCatalog.find((procedure) => procedure.id === id))
+  .filter((procedure): procedure is (typeof procedureCatalog)[number] => Boolean(procedure));
+
+const categoryOverview = [
+  { name: "Facial", text: "Injetáveis, cuidado da pele e planejamento facial individual." },
+  { name: "Corporal", text: "Protocolos selecionados conforme região, histórico e objetivo." },
+  { name: "Capilar", text: "Avaliação do couro cabeludo e cuidado capilar personalizado." },
+  { name: "Tecnologias", text: "Recursos aplicados com parâmetros definidos após avaliação." },
+].map((category) => ({
+  ...category,
+  count: procedureCatalog.filter((procedure) => procedure.category === category.name).length,
+}));
 
 const concerns = [
   {
@@ -50,16 +44,16 @@ const concerns = [
     tag: "Toxina botulínica",
   },
   {
-    label: "Textura e viço",
-    title: "Renovação que respeita a sua pele.",
-    text: "Os protocolos de peeling são escolhidos após observar textura, sensibilidade e objetivos — porque cada pele responde de um jeito.",
-    tag: "Peelings",
+    label: "Qualidade da pele",
+    title: "Tecnologia e cuidado com indicação individual.",
+    text: "Peeling químico, microagulhamento, Skinbooster e tecnologias podem integrar o plano após a avaliação da pele e do histórico clínico.",
+    tag: "Cuidados faciais",
   },
   {
-    label: "Cuidado contínuo",
-    title: "Um plano, não uma solução genérica.",
-    text: "A avaliação organiza prioridades e orienta uma jornada de cuidados coerente com a fase atual da sua pele.",
-    tag: "Avaliação personalizada",
+    label: "Corpo e cabelo",
+    title: "Objetivos diferentes pedem avaliações diferentes.",
+    text: "Os cuidados corporais e capilares começam com perguntas específicas para a região, o histórico e a necessidade apresentada.",
+    tag: "Corporal & capilar",
   },
 ];
 
@@ -68,16 +62,22 @@ const instagramMoments = [
     src: "/images/instagram-studio-01.jpg",
     alt: "Bastidores de um atendimento da Dra. Claudia Bonavoglia",
     label: "Planejamento",
+    width: 360,
+    height: 640,
   },
   {
     src: "/images/instagram-studio-02.jpg",
     alt: "Detalhes do espaço e dos materiais da Dra. Claudia Bonavoglia",
     label: "Bastidores",
+    width: 361,
+    height: 640,
   },
   {
     src: "/images/instagram-treatment.jpg",
     alt: "Aplicação de toxina botulínica realizada pela Dra. Claudia Bonavoglia",
     label: "Técnica & cuidado",
+    width: 360,
+    height: 640,
   },
 ];
 
@@ -160,14 +160,14 @@ export default function Home() {
 
         <div className="hero-content">
           <p className="eyebrow hero-kicker">
-            <span /> Saúde da pele & estética facial
+            <span /> Estética facial, corporal & capilar
           </p>
           <h1 className="hero-title">
             <span className="title-line"><span>Beleza que se</span></span>
             <span className="title-line"><span>reconhece.</span></span>
           </h1>
           <p className="hero-description">
-            Cuidado estético com escuta, planejamento e respeito às características que tornam o seu rosto único.
+            Cuidado estético com escuta, planejamento e respeito às características e aos objetivos de cada pessoa.
           </p>
 
           <div className="hero-actions">
@@ -188,7 +188,7 @@ export default function Home() {
 
         <div className="hero-visual" aria-label="Imagem conceitual de cuidados com a pele">
           <div className="hero-image-wrap">
-            <img src="/images/hero-skin.webp" alt="Mulher com pele natural iluminada em fotografia editorial" />
+            <img src="/images/hero-skin.webp" alt="Mulher com pele natural iluminada em fotografia editorial" width={1024} height={1536} fetchPriority="high" />
             <div className="image-shade" aria-hidden="true" />
           </div>
           <div className="floating-seal" aria-hidden="true">
@@ -240,32 +240,43 @@ export default function Home() {
       <section className="treatments section-pad" id="tratamentos">
         <Reveal className="section-heading">
           <p className="eyebrow">Cuidados em destaque</p>
-          <h2>Protocolos que começam pela <em>sua</em> necessidade.</h2>
+          <h2>Um catálogo mais completo, organizado pela <em>sua</em> necessidade.</h2>
         </Reveal>
+
+        <div className="category-overview" aria-label="Categorias de procedimentos">
+          {categoryOverview.map((category, index) => (
+            <Reveal key={category.name} delay={index * 70}>
+              <article><span>{String(category.count).padStart(2, "0")}</span><h3>{category.name}</h3><p>{category.text}</p></article>
+            </Reveal>
+          ))}
+        </div>
+
+        <Reveal className="treatment-subheading"><p>Alguns dos procedimentos disponíveis</p><span>O catálogo completo reúne {procedureCatalog.length} opções.</span></Reveal>
 
         <div className="treatment-list">
           {treatments.map((treatment, index) => (
             <Reveal key={treatment.name} delay={index * 90}>
               <article className="treatment-card">
-                <div className="treatment-number">{treatment.number}</div>
+                <div className="treatment-number">{String(index + 1).padStart(2, "0")}</div>
                 <div className="treatment-main">
-                  <p>{treatment.eyebrow}</p>
+                  <p>{treatment.category}</p>
                   <h3>{treatment.name}</h3>
                 </div>
-                <p className="treatment-description">{treatment.description}</p>
+                <p className="treatment-description">{treatment.summary}</p>
                 <div className="treatment-action">
                   <ArrowDownRight size={23} aria-hidden="true" />
-                  <span>{treatment.note}</span>
+                  <span>Avaliação e orientação individual</span>
                 </div>
               </article>
             </Reveal>
           ))}
         </div>
+        <Reveal className="catalog-cta"><a className="primary-button" href="/acesso"><span>Explorar catálogo completo</span><ArrowRight size={19} aria-hidden="true" /></a><p>Crie sua conta, escolha o procedimento e responda apenas à avaliação correspondente.</p></Reveal>
       </section>
 
       <section className="experience section-pad" id="experiencia">
         <div className="experience-image" aria-hidden="true">
-          <img src="/images/editorial-renewal.webp" alt="" />
+          <img src="/images/editorial-renewal.webp" alt="" width={1536} height={1024} loading="lazy" decoding="async" />
           <span className="image-label">Cuidado em cada detalhe</span>
         </div>
 
@@ -302,6 +313,24 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="portal-flow section-pad" aria-labelledby="portal-flow-title">
+        <Reveal className="portal-flow-heading">
+          <p className="eyebrow">Do interesse ao agendamento</p>
+          <h2 id="portal-flow-title">Uma jornada clara dentro do próprio site.</h2>
+          <p>As avaliações e os procedimentos são realizados exclusivamente por agendamento. O portal organiza as informações antes do contato final.</p>
+        </Reveal>
+        <div className="portal-flow-grid">
+          {[
+            ["01", "Crie seu acesso", "Cadastre-se com seus dados e consulte a política de privacidade."],
+            ["02", "Escolha o procedimento", `Pesquise entre ${procedureCatalog.length} opções e conheça a proposta de cada cuidado.`],
+            ["03", "Responda à avaliação", "Preencha somente as perguntas específicas do procedimento escolhido."],
+            ["04", "Revise o termo", "Leia o consentimento correspondente e confirme apenas quando estiver de acordo."],
+            ["05", "Consulte a agenda", "Depois de concluir as etapas, abra o WhatsApp com uma mensagem pronta."],
+          ].map(([number, title, text], index) => <Reveal key={number} delay={index * 70}><article><span>{number}</span><h3>{title}</h3><p>{text}</p></article></Reveal>)}
+        </div>
+        <Reveal className="appointment-notice"><ShieldCheck size={22} aria-hidden="true" /><div><strong>Atendimento somente com agendamento</strong><p>A disponibilidade é confirmada após a conclusão da avaliação correspondente ao procedimento.</p></div><a href="/acesso">Acessar portal <ArrowRight size={17} /></a></Reveal>
+      </section>
+
       <section className="instagram-showcase section-pad" aria-labelledby="instagram-title">
         <Reveal className="instagram-heading">
           <div>
@@ -320,7 +349,7 @@ export default function Home() {
           {instagramMoments.map((moment, index) => (
             <Reveal className={`instagram-card instagram-card-${index + 1}`} delay={index * 100} key={moment.src}>
               <a href="https://www.instagram.com/draclaudiabonavoglia/" target="_blank" rel="noreferrer" aria-label={`${moment.label} — ver no Instagram`}>
-                <img src={moment.src} alt={moment.alt} />
+                <img src={moment.src} alt={moment.alt} width={moment.width} height={moment.height} loading="lazy" decoding="async" />
                 <span className="instagram-card-shade" aria-hidden="true" />
                 <span className="instagram-card-index">0{index + 1}</span>
                 <span className="instagram-card-label">{moment.label}</span>
@@ -339,7 +368,7 @@ export default function Home() {
 
         <Reveal className="about-card" delay={120}>
           <div className="about-portrait">
-            <img src="/images/instagram-profile.jpg" alt="Dra. Claudia Bonavoglia durante um atendimento" />
+            <img src="/images/instagram-profile.jpg" alt="Dra. Claudia Bonavoglia durante um atendimento" width={150} height={150} loading="lazy" decoding="async" />
             <span aria-hidden="true">CB</span>
           </div>
           <div className="about-copy">
@@ -367,6 +396,8 @@ export default function Home() {
             ["Como saber qual procedimento é indicado para mim?", "A indicação é feita após avaliação individual. Nesse momento, a profissional considera seus objetivos, características da pele e histórico para orientar uma conduta adequada."],
             ["Os resultados ficam naturais?", "O planejamento prioriza equilíbrio e preservação das suas características. O resultado possível depende do procedimento indicado e da resposta individual de cada pessoa."],
             ["Onde acontecem os atendimentos?", "Os atendimentos são realizados em Guarulhos, São Paulo. Entre na Área do Paciente, escolha o procedimento e conclua a avaliação para consultar a disponibilidade."],
+            ["Preciso preencher uma anamnese ao criar a conta?", "Não. A avaliação aparece somente depois que você escolhe um procedimento, com perguntas relacionadas àquela opção."],
+            ["Os atendimentos são por ordem de chegada?", "Não. Procedimentos e avaliações são realizados somente com agendamento, após a consulta de disponibilidade."],
           ].map(([question, answer], index) => (
             <Reveal delay={index * 80} key={question}>
               <details>
@@ -398,7 +429,8 @@ export default function Home() {
         <p>Guarulhos, SP · CRBM 73824</p>
         <div className="footer-links">
           <a href="https://www.instagram.com/draclaudiabonavoglia/" target="_blank" rel="noreferrer">Instagram</a>
-          <a href={whatsappUrl} target="_blank" rel="noreferrer">WhatsApp</a>
+          <a href={publicWhatsappUrl} target="_blank" rel="noreferrer" data-track="whatsapp">WhatsApp</a>
+          <a href="/privacidade">Política de privacidade</a>
         </div>
         <small>As informações deste site são educativas e não substituem avaliação profissional.</small>
       </footer>

@@ -596,3 +596,66 @@ footer > small { grid-column: 1/-1; padding-top: 24px; border-top: 1px solid rgb
   .journey-monogram { width: 54px; height: 54px; }
   .questionnaire-progress { overflow-x: auto; }
 }
+
+/* Homepage catalog overview and patient journey */
+.category-overview { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 1rem; margin: 3rem 0 4rem; }
+.category-overview article { min-height: 220px; padding: 1.5rem; border: 1px solid rgba(217,198,167,.25); border-radius: 1rem; background: linear-gradient(145deg,rgba(217,198,167,.08),rgba(25,31,29,.6)); transition: transform .3s ease,border-color .3s ease,background .3s ease; }
+.category-overview article:hover { transform: translateY(-6px); border-color: rgba(217,198,167,.65); background: linear-gradient(145deg,rgba(217,198,167,.14),rgba(25,31,29,.75)); }
+.category-overview article > span { display: grid; place-items: center; width: 2.8rem; height: 2.8rem; margin-bottom: 2.2rem; border: 1px solid #756f64; border-radius: 50%; color: #e4cda8; font-size: .75rem; }
+.category-overview h3 { margin: 0 0 .65rem; font: 400 1.55rem/1.15 Georgia,serif; }
+.category-overview p { margin: 0; color: #b9bcb7; font-size: .88rem; line-height: 1.6; }
+.treatment-subheading { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; margin-bottom: 1.25rem; color: #c9cbc6; }
+.treatment-subheading p { margin: 0; font: 400 1.35rem/1.3 Georgia,serif; }
+.treatment-subheading span { color: #8f9691; font-size: .82rem; }
+.catalog-cta { display: flex; justify-content: space-between; align-items: center; gap: 2rem; margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid rgba(217,198,167,.2); }
+.catalog-cta p { max-width: 480px; color: #aeb2ad; line-height: 1.6; }
+.portal-flow { background: radial-gradient(circle at 85% 12%,rgba(217,198,167,.12),transparent 28rem),#19201e; }
+.portal-flow-heading { display: grid; grid-template-columns: 1.2fr .8fr; column-gap: 3rem; align-items: end; }
+.portal-flow-heading .eyebrow { grid-column: 1/-1; }
+.portal-flow-heading h2 { max-width: 800px; margin: .75rem 0 0; font: 400 clamp(2.4rem,5vw,5rem)/1.02 Georgia,serif; letter-spacing: -.035em; }
+.portal-flow-heading > p:last-child { max-width: 500px; margin: 0; color: #bec1bc; line-height: 1.7; }
+.portal-flow-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); margin: 4rem 0 2.5rem; border: 1px solid #4b5550; border-radius: 1rem; overflow: hidden; }
+.portal-flow-grid > .reveal:not(:last-child) { border-right: 1px solid #4b5550; }
+.portal-flow-grid article { min-height: 245px; padding: 1.4rem; }
+.portal-flow-grid article > span { color: #d7c5a1; font-size: .72rem; letter-spacing: .12em; }
+.portal-flow-grid h3 { margin: 4rem 0 .65rem; font: 400 1.25rem/1.25 Georgia,serif; }
+.portal-flow-grid p { margin: 0; color: #aeb4af; font-size: .84rem; line-height: 1.55; }
+.appointment-notice { display: flex; align-items: center; gap: 1rem; padding: 1.3rem 1.5rem; border: 1px solid #7a6c55; border-radius: .85rem; background: rgba(217,198,167,.08); }
+.appointment-notice svg { flex: 0 0 auto; color: #d7c5a1; }
+.appointment-notice strong,.appointment-notice p { display: block; margin: 0; }
+.appointment-notice p { margin-top: .2rem; color: #afb4af; font-size: .83rem; }
+.appointment-notice a { display: inline-flex; align-items: center; gap: .4rem; margin-left: auto; color: #ead9bc; white-space: nowrap; }
+
+/* Public privacy policy */
+.privacy-page { min-height: 100vh; padding: 1.5rem clamp(1rem,5vw,5rem) 5rem; background: radial-gradient(circle at 80% 5%,rgba(217,198,167,.1),transparent 30rem),#151a19; color: #f7f2e9; }
+.privacy-nav,.privacy-document { max-width: 900px; margin-inline: auto; }
+.privacy-nav { margin-bottom: 4rem; }
+.privacy-nav a { color: #e4ded3; }
+.privacy-document { padding: clamp(1.5rem,5vw,4rem); border: 1px solid #505a54; border-radius: 1.25rem; background: #202725; }
+.privacy-document h1 { max-width: 760px; margin: .55rem 0 1.25rem; font: 400 clamp(2.6rem,6vw,5.3rem)/1 Georgia,serif; letter-spacing: -.04em; }
+.privacy-lead { max-width: 700px; margin-bottom: 3.5rem; color: #c5c8c3; font-size: 1.08rem; line-height: 1.7; }
+.privacy-document section { padding: 1.5rem 0; border-top: 1px solid #414a45; }
+.privacy-document h2 { margin: 0 0 .65rem; color: #e4d1ad; font: 400 1.3rem/1.3 Georgia,serif; }
+.privacy-document section p { margin: 0; color: #d0d2cd; line-height: 1.75; }
+.privacy-contact { display: inline-flex; margin-top: 1rem; padding: .85rem 1rem; border: 1px solid #d7c5a1; border-radius: 999px; color: #f5ead8; }
+.privacy-review { margin-top: 2rem; padding: 1rem; border: 1px solid #7a6c55; border-radius: .7rem; background: #2b2921; color: #d8d2c7; line-height: 1.6; }
+.consent-check a { color: #e5d2a9; text-decoration: underline; text-underline-offset: .2rem; }
+
+@media (max-width: 980px) {
+  .category-overview { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .portal-flow-heading { grid-template-columns: 1fr; }
+  .portal-flow-heading > p:last-child { margin-top: 1.2rem; }
+  .portal-flow-grid { grid-template-columns: repeat(2,minmax(0,1fr)); border-bottom: 0; }
+  .portal-flow-grid > .reveal { border-right: 1px solid #4b5550; border-bottom: 1px solid #4b5550; }
+}
+@media (max-width: 620px) {
+  .category-overview { grid-template-columns: 1fr; }
+  .category-overview article { min-height: 180px; }
+  .category-overview article > span { margin-bottom: 1.4rem; }
+  .treatment-subheading,.catalog-cta,.appointment-notice { align-items: flex-start; flex-direction: column; }
+  .portal-flow-grid { grid-template-columns: 1fr; }
+  .portal-flow-grid > .reveal { border-right: 0; }
+  .portal-flow-grid article { min-height: 200px; }
+  .portal-flow-grid h3 { margin-top: 2.7rem; }
+  .appointment-notice a { margin-left: 0; }
+}

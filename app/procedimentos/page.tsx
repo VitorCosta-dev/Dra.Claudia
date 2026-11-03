@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 import { procedureById, procedureCatalog, procedureCategories } from "@/lib/procedure-catalog";
+import { whatsappUrl } from "@/lib/site";
 
 type Term = { id: number; procedure_id: string; title: string; version: string; content: string };
 type Acceptance = { procedure_term_id: number; accepted_at: string };
@@ -83,8 +84,7 @@ export default function ProceduresPage() {
     setAccepted((items) => [...items, result.data]);
   }
 
-  const whatsappNumber = process.env.NEXT_PUBLIC_CLINIC_WHATSAPP ?? "5511954426916";
-  const whatsappMessage = selected ? encodeURIComponent(`Olá, meu nome é ${patientName}. Conheci o procedimento ${selected.name} pelo site, concluí minha avaliação e gostaria de verificar a disponibilidade para agendamento.`) : "";
+  const schedulingUrl = selected ? whatsappUrl(`Olá, meu nome é ${patientName}. Conheci o procedimento ${selected.name} pelo site, concluí minha avaliação e gostaria de verificar a disponibilidade para agendamento.`) : "#";
 
   return <main className="patient-shell procedure-shell">
     <nav className="patient-nav"><Link href="/paciente">← Minha conta</Link><span>Procedimentos</span></nav>
@@ -111,7 +111,7 @@ export default function ProceduresPage() {
         {termAccepted ? <p className="form-success">Avaliação e termo concluídos. Você já pode solicitar o agendamento.</p> : <form className="patient-form" onSubmit={acceptTerm}><label>Digite seu nome completo para confirmar<input name="signerName" required minLength={2} maxLength={150} /></label><label className="consent-check"><input type="checkbox" required /> Li, compreendi e concordo com o termo deste procedimento.</label>{error && <p className="form-error" role="alert">{error}</p>}<button className="patient-submit" disabled={busy}>{busy ? "Registrando..." : "Aceitar termo"}</button></form>}
       </section>}
       {questionnaireDone && !selectedTerm && <div className="term-review-note"><strong>Termo em revisão</strong><p>A avaliação foi salva. O termo deste procedimento está sendo conferido antes de ser disponibilizado para assinatura.</p></div>}
-      {termAccepted && <a className="patient-submit inline-button whatsapp-finish" href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`} target="_blank" rel="noreferrer">Consultar disponibilidade pelo WhatsApp</a>}
+      {termAccepted && <a className="patient-submit inline-button whatsapp-finish" href={schedulingUrl} target="_blank" rel="noreferrer" data-track="whatsapp">Consultar disponibilidade pelo WhatsApp</a>}
     </section>}
   </main>;
 }
