@@ -102,7 +102,7 @@ button { font: inherit; }
 .nav-links a:hover::after { right: 0; }
 .nav-links .patient-area-link { padding: 8px 11px; border: 1px solid rgba(214,174,130,.55); border-radius: 999px; color: #f0d5b7; opacity: 1; }
 .nav-links .patient-area-link::after { display: none; }
-.nav-cta { justify-self: end; display: inline-flex; align-items: center; gap: 10px; padding: 13px 18px; border: 1px solid rgba(255,255,255,.32); border-radius: 999px; font-size: 12px; transition: background .3s, color .3s, transform .3s; }
+.nav-cta { justify-self: end; display: inline-flex; align-items: center; gap: 10px; padding: 13px 18px; border: 1px solid rgba(255,255,255,.32); border-radius: 999px; font-size: 12px; white-space: nowrap; transition: background .3s, color .3s, transform .3s; }
 .nav-cta:hover { background: #f5ece5; color: #201a17; transform: translateY(-2px); }
 
 .hero {
@@ -324,7 +324,7 @@ footer > small { grid-column: 1/-1; padding-top: 24px; border-top: 1px solid rgb
   .hero-trust { flex-wrap: wrap; gap: 12px 22px; margin-top: 32px; }
   .hero-visual { min-height: 560px; padding: 0 14px 14px; }
   .hero-image-wrap { border-radius: 2px 2px 80px 2px; }
-  .floating-seal { left: 26px; top: 18px; width: 106px; height: 106px; }
+  .floating-seal { display: none; }
   .visual-caption { right: 35px; bottom: 40px; width: 210px; }
   .scroll-cue { display: none; }
   .orbit-two { display: none; }

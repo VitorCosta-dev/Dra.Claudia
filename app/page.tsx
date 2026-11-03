@@ -150,7 +150,7 @@ export default function Home() {
         </nav>
 
         <a className="nav-cta" href="/acesso">
-          Acessar portal <ArrowDownRight size={17} aria-hidden="true" />
+          <span>Área do paciente</span> <ArrowDownRight size={17} aria-hidden="true" />
         </a>
       </header>
 
