@@ -43,12 +43,17 @@ export default function AccessPage() {
     if (mode === "signup") {
       const fullName = String(form.get("fullName") ?? "").trim();
       const cpf = String(form.get("cpf") ?? "").replace(/\D/g, "");
+      const acknowledgedPrivacy = form.get("privacyAcknowledgement") === "on";
       if (fullName.length < 2 || !validCpf(cpf)) {
         setError("Confira seu nome e CPF antes de continuar.");
         return;
       }
       if (password.length < 8) {
         setError("Crie uma senha com pelo menos 8 caracteres.");
+        return;
+      }
+      if (!acknowledgedPrivacy) {
+        setError("Confirme que você leu a Política de Privacidade para criar a conta.");
         return;
       }
       setBusy(true);
@@ -103,12 +108,13 @@ export default function AccessPage() {
             </>}
             <label>E-mail<input name="email" type="email" autoComplete="email" required placeholder="voce@exemplo.com" /></label>
             <label>Senha<input name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} required minLength={mode === "signup" ? 8 : undefined} placeholder={mode === "signup" ? "Mínimo de 8 caracteres" : "Sua senha"} />{mode === "signup" && <small className="field-help">Use uma senha exclusiva, com pelo menos 8 caracteres.</small>}</label>
+            {mode === "signup" && <label className="consent-check"><input name="privacyAcknowledgement" type="checkbox" required /><span>Li e estou ciente da <Link href="/privacidade" target="_blank">Política de Privacidade</Link> e do tratamento dos dados necessário para usar a Área do Paciente.</span></label>}
             {error && <p className="form-error" role="alert">{error}</p>}
             {message && <p className="form-success" role="status">{message}</p>}
             <button className="patient-submit" disabled={busy}>{busy ? "Aguarde..." : mode === "login" ? "Entrar na minha conta" : "Criar conta e continuar"}</button>
           </form>
           {mode === "login" && <Link className="subtle-link" href="/recuperar-senha">Esqueci minha senha</Link>}
-          {mode === "signup" && <p className="auth-privacy">Ao criar sua conta, você poderá revisar suas informações antes de enviar qualquer avaliação.</p>}
+          {mode === "signup" && <p className="auth-privacy">Você poderá revisar suas informações antes de enviar qualquer avaliação.</p>}
         </section>
       </div>
     </main>
