@@ -1,15 +1,28 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getSupabase } from "@/lib/supabase";
-import { pathologyOptions, QUESTIONNAIRE_VERSION, yesNoQuestions } from "@/lib/clinical-questionnaire";
+import { procedureById } from "@/lib/procedure-catalog";
 
-type SavedQuestionnaire = { answers: Record<string, unknown>; submitted_at: string | null };
+const commonSafetyQuestions = [
+  ["medical_treatment", "Atualmente está sob tratamento médico?", "Informe o motivo"],
+  ["medications", "Utiliza algum medicamento atualmente?", "Informe nome e finalidade"],
+  ["medication_allergy", "Possui alergia a medicamento, anestésico ou substância?", "Qual?"],
+  ["anticoagulants", "Usa anticoagulante, AAS, aspirina ou medicamento semelhante?", "Qual?"],
+  ["pregnant", "Está grávida, amamentando ou com suspeita de gestação?", "Descreva, se necessário"],
+  ["healing_difficulty", "Possui dificuldade de cicatrização ou tendência a queloide?", "Descreva"],
+  ["infectious_condition", "Possui infecção, inflamação ou doença contagiosa ativa?", "Descreva"],
+] as const;
+
+type SavedQuestionnaire = { answers: Record<string, unknown>; submitted_at: string };
 
 export default function QuestionnairePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const procedureId = searchParams.get("procedimento") ?? "";
+  const procedure = procedureById[procedureId];
   const [userId, setUserId] = useState("");
   const [saved, setSaved] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(true);
@@ -17,6 +30,7 @@ export default function QuestionnairePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!procedure) { router.replace("/procedimentos"); return; }
     let active = true;
     const client = getSupabase();
     async function load() {
@@ -24,97 +38,70 @@ export default function QuestionnairePage() {
       if (!active) return;
       if (!auth.user) { router.replace("/acesso"); return; }
       setUserId(auth.user.id);
-      const result = await client.from("clinical_questionnaires")
-        .select("answers,submitted_at").eq("user_id", auth.user.id).maybeSingle<SavedQuestionnaire>();
+      const result = await client.from("procedure_questionnaires").select("answers,submitted_at")
+        .eq("user_id", auth.user.id).eq("procedure_id", procedure.id).eq("questionnaire_version", `${procedure.id}-v1`).maybeSingle<SavedQuestionnaire>();
       if (!active) return;
-      if (result.error) setError("Não foi possível carregar o questionário.");
+      if (result.error) setError("Não foi possível carregar esta avaliação. Verifique se a atualização do banco foi aplicada.");
       else setSaved(result.data?.answers ?? {});
       setLoading(false);
     }
     void load();
     return () => { active = false; };
-  }, [router]);
+  }, [procedure, router]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!procedure) return;
     setError("");
     const form = new FormData(event.currentTarget);
     const answers: Record<string, unknown> = {
-      treatment_expectation: form.get("treatment_expectation"),
+      treatment_goal: form.get("treatment_goal"), treatment_area: form.get("treatment_area"),
       birth_date: form.get("birth_date"), phone: form.get("phone"),
-      address: form.get("address"), neighborhood: form.get("neighborhood"),
-      blood_type: form.get("blood_type"),
-      other_health_problems: form.get("other_health_problems"),
-      pathologies: form.getAll("pathologies"),
+      other_health_information: form.get("other_health_information"),
     };
-    for (const [key] of yesNoQuestions) {
+    for (const [key] of [...commonSafetyQuestions, ...procedure.questions]) {
       answers[key] = form.get(key);
       answers[`${key}_details`] = form.get(`${key}_details`);
     }
     setBusy(true);
-    const client = getSupabase();
-    const result = await client.from("clinical_questionnaires").upsert({
-      user_id: userId,
-      questionnaire_version: QUESTIONNAIRE_VERSION,
-      answers,
-      submitted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "user_id" });
+    const result = await getSupabase().from("procedure_questionnaires").upsert({
+      user_id: userId, procedure_id: procedure.id, questionnaire_version: `${procedure.id}-v1`, answers,
+    }, { onConflict: "user_id,procedure_id,questionnaire_version" });
     setBusy(false);
     if (result.error) { setError("Não foi possível salvar. Confira os campos e tente novamente."); return; }
-    router.replace("/paciente");
+    router.replace(`/procedimentos?procedimento=${procedure.id}`);
   }
 
-  if (loading) return <main className="patient-shell"><p className="loading-message">Carregando seu histórico clínico...</p></main>;
-
+  if (!procedure || loading) return <main className="patient-shell"><p className="loading-message">Carregando sua avaliação...</p></main>;
   const value = (key: string) => typeof saved[key] === "string" ? String(saved[key]) : "";
-  const selectedPathologies = Array.isArray(saved.pathologies) ? saved.pathologies.map(String) : [];
 
   return <main className="patient-shell questionnaire-shell">
-    <nav className="patient-nav"><Link href="/paciente">Dra. Claudia Bonavoglia</Link><span>Histórico clínico</span></nav>
+    <nav className="patient-nav"><Link href={`/procedimentos?procedimento=${procedure.id}`}>← Voltar ao procedimento</Link><span>Avaliação</span></nav>
     <form className="patient-card questionnaire-card" onSubmit={submit}>
-      <header className="questionnaire-header">
-        <p className="patient-kicker">Etapa obrigatória</p>
-        <h1>Conte um pouco sobre sua saúde</h1>
-        <p>Estas informações são confidenciais e ajudam a profissional a avaliar a segurança do atendimento. Responda com atenção.</p>
-      </header>
+      <header className="questionnaire-header"><p className="patient-kicker">Avaliação específica</p><h1>{procedure.name}</h1><p>As perguntas abaixo foram selecionadas para este procedimento. Suas respostas são confidenciais e serão avaliadas pela profissional antes do atendimento.</p></header>
+      <div className="questionnaire-progress"><span>Procedimento</span><b aria-hidden="true" /><strong>Avaliação</strong><b aria-hidden="true" /><span>Termo</span><b aria-hidden="true" /><span>Agendamento</span></div>
 
-      <fieldset className="question-section">
-        <legend>Dados pessoais e objetivo</legend>
-        <div className="form-grid">
-          <label className="wide">O que espera do tratamento?<textarea name="treatment_expectation" required defaultValue={value("treatment_expectation")} /></label>
-          <label>Data de nascimento<input type="date" name="birth_date" required defaultValue={value("birth_date")} /></label>
-          <label>Celular<input name="phone" required inputMode="tel" defaultValue={value("phone")} /></label>
-          <label className="wide">Endereço<input name="address" required defaultValue={value("address")} /></label>
-          <label>Bairro<input name="neighborhood" required defaultValue={value("neighborhood")} /></label>
-          <label>Tipo sanguíneo<select name="blood_type" required defaultValue={value("blood_type")}><option value="">Selecione</option>{["A+","A-","B+","B-","AB+","AB-","O+","O-","Não sei"].map((item) => <option key={item}>{item}</option>)}</select></label>
-        </div>
-      </fieldset>
+      <fieldset className="question-section"><legend>Objetivo e contato</legend><div className="form-grid">
+        <label className="wide">O que deseja melhorar ou tratar?<textarea name="treatment_goal" required defaultValue={value("treatment_goal")} /></label>
+        <label className="wide">Região que deseja tratar<input name="treatment_area" required defaultValue={value("treatment_area")} /></label>
+        <label>Data de nascimento<input type="date" name="birth_date" required defaultValue={value("birth_date")} /></label>
+        <label>Celular<input name="phone" required inputMode="tel" defaultValue={value("phone")} /></label>
+      </div></fieldset>
 
-      <fieldset className="question-section">
-        <legend>Dados clínicos</legend>
-        <div className="clinical-list">
-          {yesNoQuestions.map(([key, label, detail]) => <div className="clinical-question" key={key}>
-            <p>{label}</p>
-            <div className="binary-options">
-              <label><input type="radio" name={key} value="Sim" required defaultChecked={value(key) === "Sim"} /> Sim</label>
-              <label><input type="radio" name={key} value="Não" required defaultChecked={value(key) === "Não"} /> Não</label>
-            </div>
-            {detail && <label className="detail-field">{detail}<input name={`${key}_details`} defaultValue={value(`${key}_details`)} /></label>}
-          </div>)}
-        </div>
-      </fieldset>
+      <fieldset className="question-section"><legend>Segurança clínica</legend><div className="clinical-list">{commonSafetyQuestions.map(([key, label, detail]) => <Question key={key} name={key} label={label} detail={detail} value={value} />)}</div></fieldset>
+      <fieldset className="question-section"><legend>Perguntas sobre {procedure.name}</legend><div className="clinical-list">{procedure.questions.map(([key, label, detail]) => <Question key={key} name={key} label={label} detail={detail} value={value} />)}</div></fieldset>
+      <fieldset className="question-section"><legend>Informações adicionais</legend><label className="block-label">Existe algo mais sobre sua saúde que a profissional precisa saber?<textarea name="other_health_information" defaultValue={value("other_health_information")} /></label></fieldset>
 
-      <fieldset className="question-section">
-        <legend>Patologias existentes</legend>
-        <p className="field-help">Marque todas as opções que se aplicam.</p>
-        <div className="check-grid">{pathologyOptions.map((item) => <label key={item}><input type="checkbox" name="pathologies" value={item} defaultChecked={selectedPathologies.includes(item)} /> {item}</label>)}</div>
-        <label className="block-label">Outro(s) problema(s) de saúde<textarea name="other_health_problems" defaultValue={value("other_health_problems")} /></label>
-      </fieldset>
-
-      <label className="truth-check"><input type="checkbox" required /> Responsabilizo-me pela veracidade das respostas e entendo que devo informar mudanças no meu estado de saúde.</label>
+      <label className="truth-check"><input type="checkbox" required /> Confirmo que as respostas são verdadeiras e entendo que a realização do procedimento depende da avaliação profissional.</label>
       {error && <p className="form-error" role="alert">{error}</p>}
-      <button className="patient-submit" disabled={busy}>{busy ? "Salvando..." : "Salvar histórico clínico"}</button>
+      <button className="patient-submit" disabled={busy}>{busy ? "Salvando..." : "Salvar e continuar para o termo"}</button>
     </form>
   </main>;
+}
+
+function Question({ name, label, detail, value }: { name: string; label: string; detail?: string; value: (key: string) => string }) {
+  return <div className="clinical-question"><p>{label}</p><div className="binary-options">
+    <label><input type="radio" name={name} value="Sim" required defaultChecked={value(name) === "Sim"} /> Sim</label>
+    <label><input type="radio" name={name} value="Não" required defaultChecked={value(name) === "Não"} /> Não</label>
+  </div>{detail && <label className="detail-field">{detail}<input name={`${name}_details`} defaultValue={value(`${name}_details`)} /></label>}</div>;
 }

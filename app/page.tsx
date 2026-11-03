@@ -8,7 +8,6 @@ import {
   ChevronDown,
   AtSign,
   MapPin,
-  MessageCircle,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -147,11 +146,11 @@ export default function Home() {
           <a href="#sobre">Sobre</a>
           <a href="#tratamentos">Tratamentos</a>
           <a href="#experiencia">Experiência</a>
-          <a href="/acesso">Área do paciente</a>
+          <a className="patient-area-link" href="/acesso">Área do paciente</a>
         </nav>
 
-        <a className="nav-cta" href={whatsappUrl} target="_blank" rel="noreferrer">
-          Agendar avaliação <ArrowDownRight size={17} aria-hidden="true" />
+        <a className="nav-cta" href="/acesso">
+          Acessar portal <ArrowDownRight size={17} aria-hidden="true" />
         </a>
       </header>
 
@@ -172,9 +171,9 @@ export default function Home() {
           </p>
 
           <div className="hero-actions">
-            <a className="primary-button" href={whatsappUrl} target="_blank" rel="noreferrer">
-              <span>Agendar pelo WhatsApp</span>
-              <MessageCircle size={19} aria-hidden="true" />
+            <a className="primary-button" href="/acesso">
+              <span>Conhecer procedimentos</span>
+              <ArrowRight size={19} aria-hidden="true" />
             </a>
             <a className="text-button" href="#tratamentos">
               Conhecer tratamentos <ArrowRight size={17} aria-hidden="true" />
@@ -297,7 +296,7 @@ export default function Home() {
               <span className="result-tag"><Check size={14} /> {concerns[activeConcern].tag}</span>
               <h3>{concerns[activeConcern].title}</h3>
               <p>{concerns[activeConcern].text}</p>
-              <a href={whatsappUrl} target="_blank" rel="noreferrer">Conversar com a Dra. Claudia <ArrowRight size={17} /></a>
+              <a href="/acesso">Ver procedimentos no portal <ArrowRight size={17} /></a>
             </div>
           </Reveal>
         </div>
@@ -367,7 +366,7 @@ export default function Home() {
           {[
             ["Como saber qual procedimento é indicado para mim?", "A indicação é feita após avaliação individual. Nesse momento, a profissional considera seus objetivos, características da pele e histórico para orientar uma conduta adequada."],
             ["Os resultados ficam naturais?", "O planejamento prioriza equilíbrio e preservação das suas características. O resultado possível depende do procedimento indicado e da resposta individual de cada pessoa."],
-            ["Onde acontecem os atendimentos?", "Os atendimentos são realizados em Guarulhos, São Paulo. Ao chamar no WhatsApp, você recebe as informações de localização e disponibilidade."],
+            ["Onde acontecem os atendimentos?", "Os atendimentos são realizados em Guarulhos, São Paulo. Entre na Área do Paciente, escolha o procedimento e conclua a avaliação para consultar a disponibilidade."],
           ].map(([question, answer], index) => (
             <Reveal delay={index * 80} key={question}>
               <details>
@@ -385,8 +384,8 @@ export default function Home() {
         <Reveal>
           <p className="eyebrow">Seu momento pode começar aqui</p>
           <h2>Cuidar de si também é uma forma de se olhar com carinho.</h2>
-          <a className="primary-button light" href={whatsappUrl} target="_blank" rel="noreferrer">
-            <span>Agendar minha avaliação</span><MessageCircle size={19} />
+          <a className="primary-button light" href="/acesso">
+            <span>Entrar na Área do Paciente</span><ArrowRight size={19} />
           </a>
         </Reveal>
       </section>
@@ -405,10 +404,6 @@ export default function Home() {
       </footer>
       </main>
 
-      <a className="floating-whatsapp" href={whatsappUrl} target="_blank" rel="noreferrer" aria-label="Falar com a Dra. Claudia pelo WhatsApp">
-        <MessageCircle size={22} />
-        <span>Agendar</span>
-      </a>
     </>
   );
 }

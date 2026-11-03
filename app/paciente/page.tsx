@@ -28,9 +28,6 @@ export default function PatientPage() {
       if (profile.error || membership.error) {
         setState("Não foi possível carregar seus dados. Tente novamente mais tarde.");
       } else {
-        const questionnaire = await client.from("clinical_questionnaires")
-          .select("submitted_at").eq("user_id", auth.user.id).maybeSingle();
-        if (!questionnaire.data?.submitted_at) { router.replace("/questionario"); return; }
         setPatient(profile.data);
         setAdmin(Boolean(membership.data));
         setState("");
@@ -56,8 +53,13 @@ export default function PatientPage() {
         <div><dt>E-mail</dt><dd>{patient.email}</dd></div>
         <div><dt>CPF</dt><dd>•••.•••.•••-{patient.cpf.slice(-2)}</dd></div>
       </dl>}
-      {patient && <Link className="subtle-link" href="/questionario">Revisar meu histórico clínico</Link>}
-      {patient && <Link className="patient-submit inline-button" href="/procedimentos">Escolher procedimento e consultar termos</Link>}
+      {patient && <div className="patient-journey">
+        <p className="patient-kicker">Comece por aqui</p>
+        <h2>Encontre o cuidado ideal para você</h2>
+        <p>Conheça os procedimentos, responda apenas às perguntas relacionadas à sua escolha e leia o termo antes de solicitar o agendamento.</p>
+        <Link className="patient-submit inline-button" href="/procedimentos">Explorar procedimentos</Link>
+      </div>}
+      {patient && <details className="legacy-history"><summary>Histórico clínico anterior</summary><p>Se você já preencheu a ficha geral, ela permanece protegida em seu prontuário.</p></details>}
       {admin && <Link className="patient-submit inline-button" href="/admin">Abrir área ADMIN</Link>}
     </section>
   </main>;

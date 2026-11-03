@@ -6,7 +6,9 @@
 2. No projeto Supabase **Dra Claudia — Pacientes**, abra **SQL Editor**. Se a primeira
    migração ainda não foi aplicada, execute `migrations/20260923000000_patients.sql`.
    Em seguida execute `migrations/20261021000000_clinical_history_and_consent.sql`.
-   Os arquivos criam as tabelas, validam CPF, ativam RLS e registram perfil e aceite.
+   Depois execute `migrations/20261103000000_procedure_journey.sql` para ativar o
+   catálogo ampliado e as avaliações específicas por procedimento. Os arquivos
+   criam as tabelas, validam CPF, ativam RLS e registram perfil e aceite.
 3. Em **Authentication → URL Configuration**, configure a URL do site e adicione
    estas URLs exatas à lista de redirecionamento:
    - `https://site-creator-vinext-starter.vitor-fcosta.workers.dev/auth/confirm`
@@ -30,6 +32,7 @@
 - `public.patients`: nome, CPF e e-mail, vinculados ao ID da conta.
 - `public.admins`: IDs de administradores aprovados manualmente.
 - `public.clinical_questionnaires`: histórico clínico vinculado ao paciente.
+- `public.procedure_questionnaires`: avaliações específicas vinculadas ao paciente e procedimento.
 - `public.procedures`: catálogo dos procedimentos disponíveis.
 - `public.procedure_terms`: textos e versões dos termos de cada procedimento.
 - `public.procedure_consents`: aceite do paciente, com nome e horário do servidor.
