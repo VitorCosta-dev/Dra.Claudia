@@ -43,6 +43,7 @@ export default function AccessPage() {
     if (mode === "signup") {
       const fullName = String(form.get("fullName") ?? "").trim();
       const cpf = String(form.get("cpf") ?? "").replace(/\D/g, "");
+      const acknowledgedPrivacy = form.get("privacyAcknowledgement") === "on";
       if (fullName.length < 2 || !validCpf(cpf)) {
         setError("Confira seu nome e CPF antes de continuar.");
         return;
@@ -51,8 +52,12 @@ export default function AccessPage() {
         setError("Crie uma senha com pelo menos 8 caracteres.");
         return;
       }
+      if (!acknowledgedPrivacy) {
+        setError("Confirme que você leu a Política de Privacidade para criar a conta.");
+        return;
+      }
       setBusy(true);
-      const { error: signUpError } = await client.auth.signUp({
+      const { data: signUpData, error: signUpError } = await client.auth.signUp({
         email, password,
         options: {
           data: { full_name: fullName, cpf },
@@ -61,6 +66,7 @@ export default function AccessPage() {
       });
       setBusy(false);
       if (signUpError) setError("Não foi possível concluir o cadastro. Confira os dados e tente novamente.");
+      else if (signUpData.session) router.replace("/paciente");
       else setMessage("Cadastro recebido. Confira seu e-mail e confirme a conta para entrar.");
       return;
     }
@@ -72,28 +78,45 @@ export default function AccessPage() {
   }
 
   return (
-    <main className="patient-shell">
+    <main className="patient-shell auth-shell">
       <nav className="patient-nav"><Link href="/">← Dra. Claudia Bonavoglia</Link></nav>
-      <section className="patient-card auth-card">
-        <p className="patient-kicker">Área de pacientes</p>
-        <h1>{mode === "login" ? "Entrar na minha conta" : "Criar minha conta"}</h1>
-        <div className="auth-tabs" role="group" aria-label="Tipo de acesso">
-          <button type="button" aria-pressed={mode === "login"} onClick={() => { setMode("login"); setError(""); setMessage(""); }}>Entrar</button>
-          <button type="button" aria-pressed={mode === "signup"} onClick={() => { setMode("signup"); setError(""); setMessage(""); }}>Cadastrar</button>
-        </div>
-        <form onSubmit={submit} className="patient-form">
-          {mode === "signup" && <>
-            <label>Nome completo<input name="fullName" autoComplete="name" required minLength={2} maxLength={150} /></label>
-            <label>CPF<input name="cpf" inputMode="numeric" autoComplete="off" required maxLength={14} placeholder="Somente para seu cadastro" /></label>
-          </>}
-          <label>E-mail<input name="email" type="email" autoComplete="email" required /></label>
-          <label>Senha<input name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} required minLength={mode === "signup" ? 8 : undefined} /></label>
-          {error && <p className="form-error" role="alert">{error}</p>}
-          {message && <p className="form-success" role="status">{message}</p>}
-          <button className="patient-submit" disabled={busy}>{busy ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}</button>
-        </form>
-        {mode === "login" && <Link className="subtle-link" href="/recuperar-senha">Esqueci minha senha</Link>}
-      </section>
+      <div className="auth-layout">
+        <aside className="auth-showcase">
+          <div className="auth-monogram" aria-hidden="true">CB</div>
+          <p className="patient-kicker">Cuidado individual</p>
+          <h2>Seu histórico começa com informação e confiança.</h2>
+          <p>Uma área reservada para escolher seu procedimento, responder à avaliação correspondente e revisar os consentimentos.</p>
+          <ol className="auth-steps" aria-label="Etapas do cadastro">
+            <li><span>1</span><div><strong>Crie sua conta</strong><small>Informe apenas os dados necessários.</small></div></li>
+            <li><span>2</span><div><strong>Escolha o procedimento</strong><small>Pesquise e conheça as opções disponíveis.</small></div></li>
+            <li><span>3</span><div><strong>Responda à avaliação</strong><small>Cada procedimento possui perguntas específicas.</small></div></li>
+          </ol>
+          <p className="auth-security-note"><span aria-hidden="true">✓</span> Seus dados clínicos são protegidos e acessíveis somente por você e pela profissional autorizada.</p>
+        </aside>
+        <section className="patient-card auth-card">
+          <p className="patient-kicker">Área de pacientes</p>
+          <h1>{mode === "login" ? "Que bom ter você de volta" : "Crie seu acesso seguro"}</h1>
+          <p className="auth-card-intro">{mode === "login" ? "Entre para continuar seu acompanhamento." : "Leva poucos minutos. Depois, você poderá conhecer os procedimentos e iniciar sua avaliação."}</p>
+          <div className="auth-tabs" role="group" aria-label="Tipo de acesso">
+            <button type="button" aria-pressed={mode === "login"} onClick={() => { setMode("login"); setError(""); setMessage(""); }}>Já tenho conta</button>
+            <button type="button" aria-pressed={mode === "signup"} onClick={() => { setMode("signup"); setError(""); setMessage(""); }}>Quero me cadastrar</button>
+          </div>
+          <form onSubmit={submit} className="patient-form">
+            {mode === "signup" && <>
+              <label>Nome completo<input name="fullName" autoComplete="name" required minLength={2} maxLength={150} placeholder="Como aparece no seu documento" /></label>
+              <label>CPF<input name="cpf" inputMode="numeric" autoComplete="off" required maxLength={14} placeholder="Somente números" /><small className="field-help">Utilizado para identificar seu cadastro com segurança.</small></label>
+            </>}
+            <label>E-mail<input name="email" type="email" autoComplete="email" required placeholder="voce@exemplo.com" /></label>
+            <label>Senha<input name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} required minLength={mode === "signup" ? 8 : undefined} placeholder={mode === "signup" ? "Mínimo de 8 caracteres" : "Sua senha"} />{mode === "signup" && <small className="field-help">Use uma senha exclusiva, com pelo menos 8 caracteres.</small>}</label>
+            {mode === "signup" && <label className="consent-check"><input name="privacyAcknowledgement" type="checkbox" required /><span>Li e estou ciente da <Link href="/privacidade" target="_blank">Política de Privacidade</Link> e do tratamento dos dados necessário para usar a Área do Paciente.</span></label>}
+            {error && <p className="form-error" role="alert">{error}</p>}
+            {message && <p className="form-success" role="status">{message}</p>}
+            <button className="patient-submit" disabled={busy}>{busy ? "Aguarde..." : mode === "login" ? "Entrar na minha conta" : "Criar conta e continuar"}</button>
+          </form>
+          {mode === "login" && <Link className="subtle-link" href="/recuperar-senha">Esqueci minha senha</Link>}
+          {mode === "signup" && <p className="auth-privacy">Você poderá revisar suas informações antes de enviar qualquer avaliação.</p>}
+        </section>
+      </div>
     </main>
   );
 }
