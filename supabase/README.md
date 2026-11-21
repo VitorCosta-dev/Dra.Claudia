@@ -1,42 +1,107 @@
-# Cadastro de pacientes e área ADMIN
+# Supabase — ativação e segurança da Área do Paciente
 
-## Ordem de ativação
+Este diretório contém o histórico versionado do banco. A aplicação usa somente
+`NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` no navegador.
+Nunca coloque a senha do banco, `service_role` ou outras chaves secretas no site.
 
-1. Mantenha o cadastro do site fora do ar até terminar as etapas abaixo.
-2. No projeto Supabase **Dra Claudia — Pacientes**, abra **SQL Editor**. Se a primeira
-   migração ainda não foi aplicada, execute `migrations/20260923000000_patients.sql`.
-   Em seguida execute `migrations/20261021000000_clinical_history_and_consent.sql`.
-   Depois execute `migrations/20261103000000_procedure_journey.sql` para ativar o
-   catálogo ampliado e as avaliações específicas por procedimento. Os arquivos
-   criam as tabelas, validam CPF, ativam RLS e registram perfil e aceite.
-3. Em **Authentication → URL Configuration**, configure a URL do site e adicione
-   estas URLs exatas à lista de redirecionamento:
-   - `https://site-creator-vinext-starter.vitor-fcosta.workers.dev/auth/confirm`
-   - `https://site-creator-vinext-starter.vitor-fcosta.workers.dev/recuperar-senha`
-4. Configure `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-   no ambiente de build (para testes locais, copie `.env.example` para `.env.local`).
-   A senha do banco e as chaves secretas **não são usadas neste site**.
-5. Publique o código atualizado. Cadastre duas contas pelo formulário `/acesso`
-   usando os e-mails dos administradores e confirme cada e-mail.
-6. No SQL Editor, execute a consulta em `assign-admins.sql`. Confira se ela retorna
-   exatamente as duas contas esperadas, com `email_confirmed_at` preenchido.
-   Só então execute separadamente o comando INSERT comentado no mesmo arquivo.
-7. Teste com um paciente comum: ele só deve consultar o próprio registro, e `/admin`
-   deve recusar acesso. Teste também as duas contas ADMIN e a recuperação de senha.
-8. Antes de receber pacientes reais, configure SMTP para confirmação e recuperação,
-   revise backups, política de privacidade e retenção de CPF.
+## Aplicação das migrações
 
-## Modelo de acesso
+Em um banco novo, aplique todos os arquivos de `migrations/` em ordem crescente.
+Em um banco que já recebeu as migrações anteriores, aplique apenas as que ainda
+não foram executadas. A última migração obrigatória é:
 
-- `auth.users`: e-mail, senha gerenciada pelo Supabase e identidade da conta.
-- `public.patients`: nome, CPF e e-mail, vinculados ao ID da conta.
-- `public.admins`: IDs de administradores aprovados manualmente.
-- `public.clinical_questionnaires`: histórico clínico vinculado ao paciente.
-- `public.procedure_questionnaires`: avaliações específicas vinculadas ao paciente e procedimento.
-- `public.procedures`: catálogo dos procedimentos disponíveis.
-- `public.procedure_terms`: textos e versões dos termos de cada procedimento.
-- `public.procedure_consents`: aceite do paciente, com nome e horário do servidor.
-- O navegador usa só a publishable key. As políticas RLS protegem as consultas
-  mesmo que alguém altere a interface ou chame a API diretamente.
-- O painel exibe os 200 cadastros mais recentes. Antes de superar esse volume,
-  adicione paginação e busca no servidor.
+`20261121000000_full_security_hardening.sql`
+
+Ela consolida o estado final de RLS, força MFA/AAL2 para operações administrativas,
+remove gravações diretas de avaliações e consentimentos, valida esses fluxos em
+RPCs, acrescenta trilha administrativa, limita solicitações LGPD e reconcilia os
+snapshots dos termos. O script termina com uma consulta de verificação: confirme
+que todas as linhas esperadas indicam RLS ativo e forçado.
+
+Antes de executar em produção:
+
+1. Faça um backup verificável do projeto Supabase.
+2. Execute a migração em uma janela de manutenção.
+3. Guarde o resultado da consulta final de verificação.
+4. Teste uma conta de paciente comum, uma conta administrativa com MFA e uma
+   conta autenticada sem associação em `public.admins`.
+5. Confira no Table Editor se não existem dois termos ativos para o mesmo
+   procedimento.
+
+## Configuração obrigatória no painel
+
+### Authentication
+
+- Exija senha mínima de **12 caracteres** também no painel do Supabase. A validação
+  da interface não substitui a regra do servidor.
+- Ative proteção contra senhas comprometidas, quando disponível no plano.
+- Configure SMTP próprio para confirmação e recuperação de conta.
+- Revise limites de envio, rate limits e CAPTCHA para cadastro, login e recuperação.
+- Exija MFA/TOTP para todas as contas presentes em `public.admins`.
+- Desative provedores de login que não serão utilizados.
+- Revise periodicamente sessões ativas e integrantes de `public.admins`.
+
+### URLs e domínio
+
+Em **Authentication → URL Configuration**, substitua o domínio provisório pelo
+domínio final e autorize somente os retornos necessários:
+
+- `https://SEU-DOMINIO/auth/confirm`
+- `https://SEU-DOMINIO/recuperar-senha`
+
+Remova URLs antigas, ambientes de teste e curingas antes da produção. Para testes
+locais, autorize temporariamente apenas o endereço local realmente utilizado.
+
+### Banco, logs e continuidade
+
+- Confirme backups automáticos e, se o plano permitir, recuperação pontual (PITR).
+- Defina e documente retenção de dados clínicos, consentimentos, auditoria e
+  solicitações LGPD com a profissional e assessoria jurídica.
+- Restrinja o acesso ao painel Supabase e ative MFA nas contas da organização.
+- Monitore falhas de autenticação, picos de solicitações LGPD e acessos
+  administrativos registrados em `public.admin_audit_log`.
+- Não apague pacientes de teste até existir backup e uma lista exata de IDs. Faça
+  a remoção em atividade separada, validando antes que nenhum paciente real esteja
+  incluído.
+
+## Modelo final de acesso
+
+- `auth.users`: identidade, e-mail e senha gerenciados pelo Supabase Auth.
+- `public.patients`: cadastro vinculado ao `auth.uid()` e versão da política aceita.
+- `public.admins`: lista mínima e explícita de administradores.
+- `public.clinical_questionnaires`: histórico legado somente para leitura.
+- `public.procedure_questionnaires`: revisões imutáveis gravadas pela RPC validada.
+- `public.procedures`: catálogo ativo disponível a usuários autenticados.
+- `public.procedure_terms`: uma versão ativa por procedimento.
+- `public.procedure_consents`: aceite com termo imutável, avaliação vinculada,
+  nome, endereço e horário do servidor.
+- `public.privacy_requests`: pedidos do titular, enviados pela RPC com limite diário.
+- `public.clinical_documents`: metadados de documentos, acessíveis somente a
+  administradores com AAL2.
+- `public.admin_audit_log`: trilha append-only de consultas e ações administrativas.
+
+O painel lista no máximo 200 pacientes por chamada. Antes de ultrapassar esse
+volume, mantenha a busca no servidor e implemente paginação explícita na interface.
+
+## Testes de autorização após a migração
+
+| Perfil | Resultado esperado |
+|---|---|
+| Visitante anônimo | Não lê nem grava tabelas clínicas |
+| Paciente A | Lê apenas os próprios dados e não altera registros enviados |
+| Paciente A tentando ID de B | Operação recusada por RLS/RPC |
+| Autenticado fora de `admins` | Não acessa RPCs nem registros administrativos |
+| Admin em AAL1 | Painel e RPCs sensíveis recusados até concluir MFA |
+| Admin em AAL2 | Acesso permitido e registrado na trilha de auditoria |
+
+Execute também, na raiz do projeto:
+
+```powershell
+pnpm typecheck
+pnpm lint
+pnpm check:themes
+pnpm check:site
+pnpm check:security
+pnpm audit:prod
+pnpm build
+```

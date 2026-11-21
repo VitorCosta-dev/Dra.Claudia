@@ -40,7 +40,7 @@ export default function ResetPage() {
   return <main className="patient-shell"><section className="patient-card auth-card">
     <h1>{recovery ? "Criar nova senha" : "Recuperar senha"}</h1>
     <form className="patient-form" onSubmit={submit}>
-      {recovery ? <label>Nova senha<input type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)} /></label> : <label>E-mail da conta<input type="email" name="email" autoComplete="email" required /></label>}
+      {recovery ? <label>Nova senha<input type="password" autoComplete="new-password" minLength={12} required value={password} onChange={(e) => setPassword(e.target.value)} /><small className="field-help">Use pelo menos 12 caracteres e não reutilize uma senha de outro serviço.</small></label> : <label>E-mail da conta<input type="email" name="email" autoComplete="email" required /></label>}
       <button className="patient-submit" disabled={busy}>{busy ? "Aguarde..." : recovery ? "Salvar nova senha" : "Enviar link"}</button>
       {message && <p role="status">{message}</p>}
     </form><Link className="subtle-link" href="/acesso">Voltar para o acesso</Link>

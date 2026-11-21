@@ -5,8 +5,8 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/privacidade"],
-      disallow: ["/admin", "/paciente", "/questionario", "/procedimentos", "/acesso", "/recuperar-senha", "/auth"],
+      allow: ["/", "/privacidade", "/procedimentos"],
+      disallow: ["/admin", "/paciente", "/questionario", "/acesso", "/recuperar-senha", "/auth"],
     },
     sitemap: `${siteUrl}/sitemap.xml`,
   };

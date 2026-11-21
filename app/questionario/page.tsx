@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getSupabase } from "@/lib/supabase";
 import { procedureById } from "@/lib/procedure-catalog";
+import { validateQuestionnaireAnswers } from "@/lib/questionnaire-validation";
 
 const commonSafetyQuestions = [
   ["medical_treatment", "Atualmente está sob tratamento médico?", "Informe o motivo"],
@@ -16,14 +17,13 @@ const commonSafetyQuestions = [
   ["infectious_condition", "Possui infecção, inflamação ou doença contagiosa ativa?", "Descreva"],
 ] as const;
 
-type SavedQuestionnaire = { answers: Record<string, unknown>; submitted_at: string };
+type SavedQuestionnaire = { answers: Record<string, unknown>; submitted_at: string; revision: number };
 
 export default function QuestionnairePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const procedureId = searchParams.get("procedimento") ?? "";
   const procedure = procedureById[procedureId];
-  const [userId, setUserId] = useState("");
   const [saved, setSaved] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -36,13 +36,17 @@ export default function QuestionnairePage() {
     async function load() {
       const { data: auth } = await client.auth.getUser();
       if (!active) return;
-      if (!auth.user) { router.replace("/acesso"); return; }
-      setUserId(auth.user.id);
-      const result = await client.from("procedure_questionnaires").select("answers,submitted_at")
-        .eq("user_id", auth.user.id).eq("procedure_id", procedure.id).eq("questionnaire_version", `${procedure.id}-v1`).maybeSingle<SavedQuestionnaire>();
+      if (!auth.user) { router.replace(`/acesso?next=${encodeURIComponent(`/questionario?procedimento=${procedure.id}`)}`); return; }
+      const [result, profile] = await Promise.all([
+        client.from("procedure_questionnaires").select("answers,submitted_at,revision")
+          .eq("user_id", auth.user.id).eq("procedure_id", procedure.id)
+          .eq("questionnaire_version", `${procedure.id}-v1`).order("revision", { ascending: false })
+          .limit(1).maybeSingle<SavedQuestionnaire>(),
+        client.from("patients").select("birth_date,phone").eq("user_id", auth.user.id).maybeSingle(),
+      ]);
       if (!active) return;
-      if (result.error) setError("Não foi possível carregar esta avaliação. Verifique se a atualização do banco foi aplicada.");
-      else setSaved(result.data?.answers ?? {});
+      if (result.error || profile.error) setError("Não foi possível carregar esta avaliação. Verifique se a atualização do banco foi aplicada.");
+      else setSaved({ birth_date: profile.data?.birth_date ?? "", phone: profile.data?.phone ?? "", ...(result.data?.answers ?? {}) });
       setLoading(false);
     }
     void load();
@@ -54,29 +58,38 @@ export default function QuestionnairePage() {
     if (!procedure) return;
     setError("");
     const form = new FormData(event.currentTarget);
-    const answers: Record<string, unknown> = {
-      treatment_goal: form.get("treatment_goal"), treatment_area: form.get("treatment_area"),
-      birth_date: form.get("birth_date"), phone: form.get("phone"),
-      other_health_information: form.get("other_health_information"),
+    const answers: Record<string, string> = {
+      treatment_goal: String(form.get("treatment_goal") ?? ""),
+      treatment_area: String(form.get("treatment_area") ?? ""),
+      birth_date: String(form.get("birth_date") ?? ""),
+      phone: String(form.get("phone") ?? ""),
+      other_health_information: String(form.get("other_health_information") ?? ""),
     };
     for (const [key] of [...commonSafetyQuestions, ...procedure.questions]) {
-      answers[key] = form.get(key);
-      answers[`${key}_details`] = form.get(`${key}_details`);
+      answers[key] = String(form.get(key) ?? "");
+      answers[`${key}_details`] = String(form.get(`${key}_details`) ?? "");
     }
+    const validationError = validateQuestionnaireAnswers(answers, [
+      "treatment_goal", "treatment_area", "birth_date", "phone",
+      ...commonSafetyQuestions.map(([key]) => key),
+      ...procedure.questions.map(([key]) => key),
+    ]);
+    if (validationError) { setError(validationError); return; }
     setBusy(true);
-    const result = await getSupabase().from("procedure_questionnaires").upsert({
-      user_id: userId, procedure_id: procedure.id, questionnaire_version: `${procedure.id}-v1`, answers,
-    }, { onConflict: "user_id,procedure_id,questionnaire_version" });
+    const result = await getSupabase().rpc("submit_procedure_questionnaire", {
+      p_procedure_id: procedure.id,
+      p_answers: answers,
+    });
     setBusy(false);
     if (result.error) { setError("Não foi possível salvar. Confira os campos e tente novamente."); return; }
-    router.replace(`/procedimentos?procedimento=${procedure.id}`);
+    router.replace(`/procedimentos?procedimento=${procedure.id}&etapa=termo&salvo=1#procedure-term`);
   }
 
   if (!procedure || loading) return <main className="patient-shell"><p className="loading-message">Carregando sua avaliação...</p></main>;
   const value = (key: string) => typeof saved[key] === "string" ? String(saved[key]) : "";
 
   return <main className="patient-shell questionnaire-shell">
-    <nav className="patient-nav"><Link href={`/procedimentos?procedimento=${procedure.id}`}>← Voltar ao procedimento</Link><span>Avaliação</span></nav>
+    <nav className="patient-nav"><Link className="return-button" href={`/procedimentos?procedimento=${procedure.id}`}>← Voltar ao procedimento</Link><span>Avaliação</span></nav>
     <form className="patient-card questionnaire-card" onSubmit={submit}>
       <header className="questionnaire-header"><p className="patient-kicker">Avaliação específica</p><h1>{procedure.name}</h1><p>As perguntas abaixo foram selecionadas para este procedimento. Suas respostas são confidenciais e serão avaliadas pela profissional antes do atendimento.</p></header>
       <div className="questionnaire-progress"><span>Procedimento</span><b aria-hidden="true" /><strong>Avaliação</strong><b aria-hidden="true" /><span>Termo</span><b aria-hidden="true" /><span>Agendamento</span></div>
@@ -94,7 +107,7 @@ export default function QuestionnairePage() {
 
       <label className="truth-check"><input type="checkbox" required /> Confirmo que as respostas são verdadeiras e entendo que a realização do procedimento depende da avaliação profissional.</label>
       {error && <p className="form-error" role="alert">{error}</p>}
-      <button className="patient-submit" disabled={busy}>{busy ? "Salvando..." : "Salvar e continuar para o termo"}</button>
+      <button className="patient-submit" disabled={busy}>{busy ? "Enviando..." : "Enviar avaliação e continuar para o termo"}</button>
     </form>
   </main>;
 }

@@ -23,13 +23,13 @@ const injectableQuestions = [
 
 const corporalQuestions = [
   ["body_previous", "Já realizou tratamento corporal anteriormente?", "Qual, região e data?"],
-  ["body_goal", "Qual região deseja tratar?", "Informe também seu principal objetivo"],
+  ["body_goal", "Há alguma região ou objetivo corporal adicional que deseja informar?", "Informe a região e seu principal objetivo"],
   ["body_circulation", "Possui varizes, trombose ou alteração circulatória?", "Descreva"],
   ["body_sensitivity", "Possui alteração de sensibilidade na região?", "Descreva"],
 ] as const;
 
 const capillaryQuestions = [
-  ["hair_complaint", "Qual é a principal queixa capilar?", "Informe há quanto tempo percebe a alteração"],
+  ["hair_complaint", "Possui uma queixa capilar específica?", "Descreva a queixa e há quanto tempo percebe a alteração"],
   ["hair_diagnosis", "Possui diagnóstico capilar ou dermatológico?", "Qual?"],
   ["hair_chemical", "Realiza química, coloração ou outro tratamento no cabelo?", "Qual e com que frequência?"],
   ["hair_medication", "Utiliza medicamento ou suplemento para queda capilar?", "Qual?"],
@@ -57,7 +57,8 @@ export const procedureCatalog: ProcedureCatalogItem[] = [
   { id: "depilacao-a-laser", name: "Depilação a Laser", category: "Tecnologias", summary: "Redução progressiva dos pelos com parâmetros individualizados.", accent: "DL", questions: [...facialQuestions, ["laser_sun", "Houve exposição solar recente na área?", "Informe quando"], ["laser_hair_removal", "Usou cera, pinça ou outro método de arrancamento recentemente?", "Qual e quando?"]] },
   { id: "criolipolise", name: "Criolipólise", category: "Corporal", summary: "Resfriamento controlado para redução de gordura localizada.", accent: "CR", questions: corporalQuestions },
   { id: "hidrolipoclasia", name: "Hidrolipoclasia", category: "Corporal", summary: "Procedimento corporal invasivo indicado somente após avaliação clínica.", accent: "HL", questions: corporalQuestions },
-  { id: "terapia-capilar", name: "Terapia Capilar", category: "Capilar", summary: "Avaliação do couro cabeludo e plano de cuidado capilar individualizado.", accent: "TC", questions: capillaryQuestions },
+  { id: "microagulhamento-capilar", name: "Microagulhamento Capilar", category: "Capilar", summary: "Microperfurações controladas no couro cabeludo conforme avaliação profissional.", accent: "MC", questions: capillaryQuestions },
+  { id: "mesoterapia-capilar", name: "Mesoterapia Capilar", category: "Capilar", summary: "Aplicação intradérmica de substâncias específicas no couro cabeludo após avaliação.", accent: "ME", questions: capillaryQuestions },
 ];
 
 export const procedureById = Object.fromEntries(procedureCatalog.map((item) => [item.id, item]));

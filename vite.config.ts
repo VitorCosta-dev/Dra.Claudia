@@ -1,12 +1,11 @@
-import vinext from "vinext";
-import { defineConfig } from "vite";
+﻿import vinext from "vinext";
+import { defineConfig, loadEnv } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
 import { sites } from "./build/sites-vite-plugin";
 import { kvDataAdapter } from "@vinext/cloudflare/cache/kv-data-adapter";
 import { cdnAdapter } from "@vinext/cloudflare/cache/cdn-adapter";
 import { imagesOptimizer } from "@vinext/cloudflare/images/images-optimizer";
-import { cloudflare } from "@cloudflare/vite-plugin";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
@@ -38,7 +37,16 @@ const localBindingConfig = {
     : [],
 };
 
-export default defineConfig(async () => {
+export default defineConfig(async ({ mode, command }) => {
+  // Expose only the public Supabase values in the browser bundle.
+  // Some vinext client environments do not replace NEXT_PUBLIC_* by default.
+  const localEnv = loadEnv(mode, process.cwd(), "");
+  const publicSupabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL || localEnv.NEXT_PUBLIC_SUPABASE_URL || "";
+  const publicSupabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    localEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    "";
   // Use Miniflare's local Request.cf placeholder unless fetching is requested.
   process.env.CLOUDFLARE_CF_FETCH_ENABLED ??= "false";
   process.env.WRANGLER_SEND_METRICS ??= "false";
@@ -50,10 +58,26 @@ export default defineConfig(async () => {
   process.env.WRANGLER_REGISTRY_PATH ??= ".wrangler/dev-registry";
   process.env.MINIFLARE_REGISTRY_PATH ??= ".wrangler/registry";
 
-  // Wrangler snapshots its log path while the Cloudflare plugin is imported.
-  const { cloudflare } = await import("@cloudflare/vite-plugin");
+  // The Cloudflare/Miniflare plugin is required for production builds, but its
+  // worker introspection can fail with ECONNRESET on Windows during local dev.
+  // vinext already provides the local development server, so keep Cloudflare
+  // out of `pnpm dev` and preserve it for build/deploy.
+  const cloudflarePlugin = command === "build"
+    ? (await import("@cloudflare/vite-plugin")).cloudflare({
+        viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
+        inspectorPort: false,
+        config: localBindingConfig,
+      })
+    : null;
 
   return {
+    envPrefix: ["VITE_", "NEXT_PUBLIC_"],
+    define: {
+      "import.meta.env.NEXT_PUBLIC_SUPABASE_URL": JSON.stringify(publicSupabaseUrl),
+      "import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(publicSupabaseKey),
+      "process.env.NEXT_PUBLIC_SUPABASE_URL": JSON.stringify(publicSupabaseUrl),
+      "process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(publicSupabaseKey),
+    },
     server: {
       ...(managedLinux ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] } : {}),
       ...(isCodexSeatbeltSandbox ? { watch: { useFsEvents: false, usePolling: true } } : {}),
@@ -65,11 +89,8 @@ export default defineConfig(async () => {
         prerender: { routes: "*" },
       }),
       sites({ mockAuth: !managedLinux }),
-      cloudflare({
-        viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
-        inspectorPort: false,
-        config: localBindingConfig,
-      }),
+      ...(cloudflarePlugin ? [cloudflarePlugin] : []),
     ],
   };
 });
+

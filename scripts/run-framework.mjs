@@ -1,10 +1,15 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { readExecutionProfile } from "./execution-profile.mjs";
+import { writePublicSupabaseConfig } from "./write-public-supabase-config.mjs";
 
 const [command, ...args] = process.argv.slice(2);
 if (!["dev", "build"].includes(command)) throw new Error("Expected dev or build.");
 const managedLinux = readExecutionProfile() === "managed-linux";
+
+// Gera um módulo estático antes de o Vinext/Vite analisar o código cliente.
+// Isso evita diferenças de substituição de process.env/import.meta.env no Windows.
+writePublicSupabaseConfig();
 
 if (managedLinux && command === "build") {
   const result = spawnSync("bash", [
