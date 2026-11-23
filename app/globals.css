@@ -1519,3 +1519,19 @@ body:not(:has(.admin-workspace)) .theme-toggle {
   .admin-patient-summary strong,.admin-clinical-record dd,.admin-consent-list dd,.admin-legacy-record dd { color: #111 !important; }
   .admin-legacy-record > div { display: block !important; }
 }
+
+/* FINAL-MOBILE-THEME-FIX */
+@media (max-width:760px) {
+  html[data-theme="light"] .hero-content { background:linear-gradient(160deg,#fff,#fff4f8); }
+  html[data-theme="dark"] .hero-content { background:linear-gradient(160deg,#171116,#251720); }
+  html[data-theme="light"] .treatment-scroll-hint { color:#764c5c; }
+}
+html[data-theme="light"] .hero-title { color:#3d2630; }
+html[data-theme="dark"] .hero-title { color:#fff8fa; }
+html[data-theme="light"] .category-overview article > span { border-color:#c98aa1; background:#fff; color:#8b3858; }
+html[data-theme="light"] .category-overview h3,
+html[data-theme="light"] .treatment-subheading { color:#4b303a; }
+html[data-theme="light"] .category-overview p,
+html[data-theme="light"] .treatment-subheading span,
+html[data-theme="light"] .catalog-cta p { color:#725f66; }
+html[data-theme="light"] .treatment-number { color:#8b3858; opacity:1; }
