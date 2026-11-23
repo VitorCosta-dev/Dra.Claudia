@@ -112,12 +112,13 @@ export default function RootLayout({
           data-theme-toggle
           aria-label="Ativar tema escuro"
           aria-pressed="false"
+          suppressHydrationWarning
         >
-          <span className="theme-toggle-icons" aria-hidden="true">
-            <span className="theme-toggle-icon is-active" id="theme-toggle-sun">☀</span>
-            <span className="theme-toggle-icon" id="theme-toggle-moon">☾</span>
+          <span className="theme-toggle-icons" aria-hidden="true" suppressHydrationWarning>
+            <span className="theme-toggle-icon is-active" id="theme-toggle-sun" suppressHydrationWarning>☀</span>
+            <span className="theme-toggle-icon" id="theme-toggle-moon" suppressHydrationWarning>☾</span>
           </span>
-          <span className="theme-toggle-label" id="theme-toggle-label">Tema claro</span>
+          <span className="theme-toggle-label" id="theme-toggle-label" suppressHydrationWarning>Tema claro</span>
         </button>
         <script dangerouslySetInnerHTML={{ __html: themeToggleScript }} />
         <FloatingWhatsapp />
